@@ -13,7 +13,7 @@ $(document).on("keyup", function(e){
 })
 
 $("#btnSend").on("click", function() {
-	if($("#user_id").val() == ""){
+	if($("#user_id").val() == "" || $("#message").val() == ""){
 		return false;
 	}
 	webSocket.sendChat();

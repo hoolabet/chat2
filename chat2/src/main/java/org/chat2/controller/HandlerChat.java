@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.chat2.model.ChatVO;
+import org.chat2.service.HandlerService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -15,7 +18,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class HandlerChat extends TextWebSocketHandler {
-
+	@Autowired
+	HandlerService hs;
 	// (<"chat_url", 방ID>, <"session", 세션>) - (<"chat_url", 방ID>, <"session", 세션>) - (<"chat_url", 방ID>, <"session", 세션>) 형태 
 	private List<Map<String, Object>> sessionList = new ArrayList<Map<String, Object>>();
 	
@@ -38,8 +42,15 @@ public class HandlerChat extends TextWebSocketHandler {
 			map.put("chat_url", mapReceive.get("chat_url"));
 			map.put("session", session);
 			sessionList.add(map);
-			
+			int j = 0;
 			// 같은 채팅방에 입장 메세지 전송
+			for (int i = 0; i < sessionList.size(); i++) {
+				Map<String, Object> mapSessionList = sessionList.get(i);
+				String chat_url = (String) mapSessionList.get("chat_url");
+				if(chat_url.equals(mapReceive.get("chat_url"))) {
+					j++;
+				}
+			}
 			for (int i = 0; i < sessionList.size(); i++) {
 				Map<String, Object> mapSessionList = sessionList.get(i);
 				String chat_url = (String) mapSessionList.get("chat_url");
@@ -51,8 +62,10 @@ public class HandlerChat extends TextWebSocketHandler {
 					mapToSend.put("cmd", "CMD_ENTER");
 					mapToSend.put("id", mapReceive.get("id"));
 					mapToSend.put("msg", mapReceive.get("id") +  "님이 입장 했습니다.");
+					mapToSend.put("count", j+"");
 					String jsonStr = objectMapper.writeValueAsString(mapToSend);
 					sess.sendMessage(new TextMessage(jsonStr));
+					
 				}
 			}
 			break;
@@ -70,10 +83,17 @@ public class HandlerChat extends TextWebSocketHandler {
 					mapToSend.put("chat_url", chat_url);
 					mapToSend.put("cmd", "CMD_MSG_SEND");
 					mapToSend.put("id", mapReceive.get("id"));
-					mapToSend.put("msg", mapReceive.get("id") + " : " + mapReceive.get("msg"));
-
+					mapToSend.put("msg", mapReceive.get("msg"));
+					
 					String jsonStr = objectMapper.writeValueAsString(mapToSend);
 					sess.sendMessage(new TextMessage(jsonStr));
+					
+					ChatVO cvo = new ChatVO();
+					cvo.setUrl(chat_url);
+					cvo.setId(mapReceive.get("id"));
+					cvo.setContent(mapReceive.get("msg"));
+					
+					hs.insertChat(cvo);
 				}
 			}
 			break;
@@ -108,12 +128,12 @@ public class HandlerChat extends TextWebSocketHandler {
 			Map<String, Object> mapSessionList = sessionList.get(i);
 			String chat_url = (String) mapSessionList.get("chat_url");
 			WebSocketSession sess = (WebSocketSession) mapSessionList.get("session");
-
 			if (chat_url.equals(now_chat_url)) {
 				Map<String, String> mapToSend = new HashMap<String, String>();
 				mapToSend.put("chat_url", chat_url);
 				mapToSend.put("cmd", "CMD_EXIT");
 				mapToSend.put("msg", session.getId() + "님이 퇴장 했습니다.");
+				System.out.println(sessionList.size());
 
 				String jsonStr = objectMapper.writeValueAsString(mapToSend);
 				sess.sendMessage(new TextMessage(jsonStr));

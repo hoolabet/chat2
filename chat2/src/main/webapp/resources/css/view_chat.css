@@ -28,6 +28,12 @@
 	box-shadow: inset 0px 0px 5px white;
 }
 
+#count_div{
+	position: absolute;
+	top: 20px;
+	
+}
+
 #chat_box {
 	width: 360px;
 	height: 400px;
@@ -62,4 +68,23 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
+}
+
+.chats {
+	margin-top: 10px;
+}
+.ids {
+	cursor: pointer;
+	font-weight: 900;
+}
+.msgs {
+	width: 210px;
+	padding: 10px;
+	border: 1px solid black;
+	border-radius: 15px;
+}
+
+.dates {
+	font-size: 12px;
+	margin-left: 20px;
 }

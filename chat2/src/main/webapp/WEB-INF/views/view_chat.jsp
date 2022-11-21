@@ -12,7 +12,11 @@
 	<input type="hidden" id="user_id" value="${userId}">
 	<input type="hidden" id="url" value="${url}">
 	<div id="chat_box">
-		<div id="divChatData"></div>
+		<div id="divChatData">
+			<div id="count_div">
+				현재 접속자 수 : <span id="cu"></span>
+			</div>
+		</div>
 		<div id="chat_ctrl">
 			<input type="text" id="message" /> <input type="button" id="btnSend"
 				value="채팅 전송" />
@@ -27,36 +31,41 @@
 	$(window).on('load', function () {
 		webSocket.init({ url: '<c:url value="/chat" />' });	
 	});
-
-
+	
 	const webSocket = {
 			init: function(param) {
 				this._url = param.url;
 				this._initSocket();
 			},
 			sendChat: function() {
-				this._sendMessage('${param.chat_url}', 'CMD_MSG_SEND', $("#user_id").val(), $('#message').val());
+				this._sendMessage('${param.chat_url}', 'CMD_MSG_SEND', $("#user_id").val(), $('#message').val().replace("<","&lt;").replace(">","&gt;"));
 				$('#message').val('');
 			},
 			sendEnter: function() {
-				this._sendMessage('${param.chat_url}', 'CMD_ENTER', $("#user_id").val(), $('#message').val());
+				this._sendMessage('${param.chat_url}', 'CMD_ENTER', $("#user_id").val(), $('#message').val().replace("<","&lt;").replace(">","&gt;"));
 				$('#message').val('');
 			},
 			receiveMessage: function(msgData) {
 
 				// 정의된 CMD 코드에 따라서 분기 처리
-				if(msgData.cmd == 'CMD_MSG_SEND') {					
-					$('#divChatData').append('<div>' + msgData.msg + '</div>');
+				if(msgData.cmd == 'CMD_MSG_SEND') {
+					const a = new Date();
+					$('#divChatData').append(`<div class="chats"><div class="ids" data-id=`+msgData.id+`>`+msgData.id+`<span class="dates">`+a.getFullYear()+`-`+(a.getMonth()+1)+`-`+a.getDate()+`  `+a.getHours()+`:`+a.getMinutes()+`:`+a.getSeconds()+`</span></div> <div class="msgs">`+msgData.msg+`</div></div>`);
 					$("#divChatData").scrollTop($("#divChatData")[0].scrollHeight);
+					$(".ids").off("click").on("click", function () {
+						console.log($(this).data("id"));
+					})
 				}
-				/* // 입장
-					else if(msgData.cmd == 'CMD_ENTER') {
-						$('#divChatData').append('<div>' + msgData.msg + '</div>');
-					}
-					// 퇴장
-					else if(msgData.cmd == 'CMD_EXIT') {					
-						$('#divChatData').append('<div>' + msgData.msg + '</div>');
-					} */
+				// 입장
+				else if(msgData.cmd == 'CMD_ENTER') {
+					/* $('#divChatData').append('<div>' + msgData.msg + '</div>'); */
+					$("#cu").html(msgData.count);
+				}
+				// 퇴장
+				else if(msgData.cmd == 'CMD_EXIT') {					
+					/* $('#divChatData').append('<div>' + msgData.msg + '</div>'); */
+					$("#cu").html(Number($("#cu").html()) - 1);
+				}
 			},
 			closeMessage: function(str) {
 				$('#divChatData').append('<div>' + '연결 끊김 : ' + str + '</div>');
